@@ -1,21 +1,45 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 
 class LengthActions extends StatefulWidget {
   @override
   _LengthActionsState createState() => _LengthActionsState();
 }
-class NumberLimitFormatter extends TextInputFormatter {
+class TextNumberLimitFormatter extends TextInputFormatter {
+  int countPoints=0;
+  TextNumberLimitFormatter();
+
+  RegExp exp = new RegExp("[0-9.]");
+  static const String POINTER = ".";
+  static const String ZERO = "0";
+
   @override
-  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
-    if(newValue.text == "") return newValue;
-    //if()
-    if(int.parse(newValue.text.toString())<100000000000){
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
+    if(newValue.text.length>=12) {
+      return oldValue;
+    }
+      if (newValue.text.isEmpty) {
+        return newValue;
+      }
+      try{
+        double.parse(newValue.text);
+      }
+      catch(e){
+        return oldValue;
+      }
+
+      if(newValue.text[0]=='0') return oldValue;
       return newValue;
     }
-    return oldValue;
-  }
+
 }
+
+
+
 class _LengthActionsState extends State<LengthActions> {
   String _from = 'centimeters';
   String _to = 'feet';
@@ -27,6 +51,22 @@ class _LengthActionsState extends State<LengthActions> {
     'centimeters',
     'feet',
   ];
+  final TextEditingController _textController = TextEditingController();
+
+  String? get _errorText{
+    final text = _textController.value.text;
+    if(text.length >= 11){
+      return 'to long';
+    }
+    return null;
+  }
+
+  Future<void> _copyToClipboard() async {
+    await Clipboard.setData(ClipboardData(text: _textController.text));
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      content: Text('Copied to clipboard'),
+    ));
+  }
 
   void convert(String from, String to, double value) async {
 
@@ -135,17 +175,33 @@ class _LengthActionsState extends State<LengthActions> {
                 ),
                 width: MediaQuery.of(context).size.width * 0.30,
                 child: TextField(
-                  //controller: fromText,
+                  controller: _textController,
                   cursorHeight: 20,
                   keyboardType: TextInputType.number,
                   inputFormatters: [
-                    NumberLimitFormatter(),
-                    FilteringTextInputFormatter.digitsOnly,
+                    //TextNumberF(),
+                    TextNumberLimitFormatter(),
+                    //LengthLimitingTextInputFormatter(11),
+                  //  FilteringTextInputFormatter.digitsOnly,
                   ],
                   decoration: InputDecoration(
+                      errorText: _errorText,
                       labelText: '  Enter value...',
-                      floatingLabelBehavior: FloatingLabelBehavior.never),
+                      floatingLabelBehavior: FloatingLabelBehavior.never,
+                     // icon:IconButton(
+                     // icon:const Icon(Icons.copy),
+                     // onPressed: _copyToClipboard,
+                  ),
+
+
                   onChanged: (value) {
+                   // if(value.length == 11){
+
+                    //   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    //    content: Text("You cant insert more values"),
+                    //  ));
+                    //}
+
                     var rv = double.tryParse(value);
                     if (rv != null && rv >= 0) {
                       setState(() {
@@ -156,12 +212,49 @@ class _LengthActionsState extends State<LengthActions> {
                 ),
               ),
               SizedBox(
-                width: 10,
+                width: 30,
               ),
               Text(
                 _from == 'centimeters' ? 'cm' : _from,
                 style: TextStyle(fontSize: 22),
               ),
+              SizedBox(
+                width: 15,
+              ),
+              ElevatedButton(
+                  style:ElevatedButton.styleFrom(
+                      primary: Colors.greenAccent,
+                      fixedSize: const Size(20, 10),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(40)
+                      )
+                  ),
+                  onPressed: (){
+                    Clipboard.setData(ClipboardData(text: _textController.text));
+                  },
+                  child: Text("Copy"
+                  )
+              ),
+              ElevatedButton(
+                onPressed: ()  {
+                  print(_textController.text);
+
+                Clipboard.getData(Clipboard.kTextPlain).then((value){
+
+                  if(value==null) return;
+                  int textFieldCount=_textController.text.length;
+                  int clipBoardCount=value.text.toString().length;
+                  if(clipBoardCount+textFieldCount>=12){
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('to much')));
+                    return;
+                  }
+
+                  _textController.text = _textController.text + value.text.toString();
+                });
+                },
+                child: Text("Paste")
+                ),
+
               ],
           ),
           SizedBox(
@@ -179,8 +272,6 @@ class _LengthActionsState extends State<LengthActions> {
 
             ]
           ),
-
-
           SizedBox(
             width: 5,
           ),
@@ -261,11 +352,16 @@ class _LengthActionsState extends State<LengthActions> {
               SizedBox(
                 width: 30,
               ),
-              Icon(
-                Icons.arrow_forward,
-                color: Colors.greenAccent,
-                size: 30.0,
-                semanticLabel: 'Text to announce in accessibility modes',
+              MaterialButton(
+                child:Icon(Icons.double_arrow,
+                  color: Colors.greenAccent,
+                  size: 30.0,),
+                onPressed: (){
+                  String temp = this._from;
+                  this._from = _to;
+                  _to = temp;
+                  convert(_from, _to, _value);
+                },
               ),
               SizedBox(
                 width: 30,
@@ -302,14 +398,22 @@ class _LengthActionsState extends State<LengthActions> {
                 ),
                 width: MediaQuery.of(context).size.width * 0.30,
                 child: TextField(
+                  controller: _textController,
                   cursorHeight: 20,
-                  //style: inputStyle,
-                  //onSubmitted: (value) =>
-                  //    convert(_from, _to, double.parse(value)),
                   keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    // TextNumberLimitFormatter(),
+                    TextNumberLimitFormatter(),
+                    LengthLimitingTextInputFormatter(11),
+                    //  FilteringTextInputFormatter.digitsOnly,
+                  ],
                   decoration: InputDecoration(
-                      labelText: '  Enter value...',
-                      floatingLabelBehavior: FloatingLabelBehavior.never),
+                    labelText: '  Enter value...',
+                    floatingLabelBehavior: FloatingLabelBehavior.never,
+                    // icon:IconButton(
+                    // icon:const Icon(Icons.copy),
+                    // onPressed: _copyToClipboard,
+                  ),
                   onChanged: (value) {
                     var rv = double.tryParse(value);
                     if (rv != null && rv >= 0) {
@@ -317,7 +421,6 @@ class _LengthActionsState extends State<LengthActions> {
                         _value = rv;
                       });
                     }
-
                   },
                 ),
               ),
@@ -329,6 +432,23 @@ class _LengthActionsState extends State<LengthActions> {
                 style: TextStyle(fontSize: 22),
               ),
 
+              SizedBox(
+                width: 15,
+              ),
+              ElevatedButton(
+                  style:ElevatedButton.styleFrom(
+                      primary: Colors.greenAccent,
+                      fixedSize: const Size(20, 10),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(40)
+                      )
+                  ),
+                  onPressed: (){
+                    Clipboard.setData(ClipboardData(text: _textController.text));
+                  },
+                  child: Text("Copy"
+                  )
+              ),
 
               SizedBox(
                 width: 25,

@@ -2,10 +2,36 @@
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class WeightActions extends StatefulWidget {
   @override
   _WeightActionsState createState() => _WeightActionsState();
+}
+class TextNumberLimitFormatter extends TextInputFormatter {
+  int countPoints=0;
+  TextNumberLimitFormatter();
+
+  RegExp exp = new RegExp("[0-9.]");
+  static const String POINTER = ".";
+  static const String ZERO = "0";
+
+  @override
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
+    if(newValue.text.length>=12) return oldValue;
+    if (newValue.text.isEmpty) {
+      return newValue;
+    }
+    try{
+      double.parse(newValue.text);
+    }
+    catch(e){
+      return oldValue;
+    }
+    if(newValue.text[0]=='0') return oldValue;
+    return newValue;
+  }
 }
 
 class _WeightActionsState extends State<WeightActions> {
@@ -19,6 +45,15 @@ class _WeightActionsState extends State<WeightActions> {
     'grams',
     'tons',
   ];
+
+  final TextEditingController _textController = TextEditingController();
+
+  Future<void> _copyToClipboard() async {
+    await Clipboard.setData(ClipboardData(text: _textController.text));
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      content: Text('Copied to clipboard'),
+    ));
+  }
 
   String GetName(String name){
     if(name == 'celsius') return 'dc';
@@ -91,11 +126,16 @@ class _WeightActionsState extends State<WeightActions> {
               SizedBox(
                 width: 30,
               ),
-              Icon(
-                Icons.arrow_circle_down_rounded,
-                color: Colors.greenAccent,
-                size: 30.0,
-                semanticLabel: 'Text to announce in accessibility modes',
+              MaterialButton(
+                child:Icon(Icons.double_arrow,
+                  color: Colors.greenAccent,
+                  size: 30.0,),
+                onPressed: (){
+                  String temp = this._from;
+                  this._from = _to;
+                  _to = temp;
+                  convert(_from, _to, _value);
+                },
               ),
               SizedBox(
                 width: 30,
@@ -129,14 +169,25 @@ class _WeightActionsState extends State<WeightActions> {
                     ),
                     width: MediaQuery.of(context).size.width * 0.30,
                     child: TextField(
+                      controller: _textController,
                       cursorHeight: 20,
                       keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        // TextNumberLimitFormatter(),
+                        TextNumberLimitFormatter(),
+                        LengthLimitingTextInputFormatter(11),
+                        //  FilteringTextInputFormatter.digitsOnly,
+                      ],
                       decoration: InputDecoration(
-                          labelText: '  Enter value...',
-                          floatingLabelBehavior: FloatingLabelBehavior.never),
+                        labelText: '  Enter value...',
+                        floatingLabelBehavior: FloatingLabelBehavior.never,
+                        // icon:IconButton(
+                        // icon:const Icon(Icons.copy),
+                        // onPressed: _copyToClipboard,
+                      ),
                       onChanged: (value) {
                         var rv = double.tryParse(value);
-                        if (rv != null ) {
+                        if (rv != null && rv >= 0) {
                           setState(() {
                             _value = rv;
                           });
@@ -151,6 +202,23 @@ class _WeightActionsState extends State<WeightActions> {
                   Text(
                     _from == 'kilograms'?'kg':_from,
                     style: TextStyle(fontSize: 22),
+                  ),
+                  SizedBox(
+                    width: 15,
+                  ),
+                  ElevatedButton(
+                      style:ElevatedButton.styleFrom(
+                          primary: Colors.greenAccent,
+                          fixedSize: const Size(20, 10),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(40)
+                          )
+                      ),
+                      onPressed: (){
+                        Clipboard.setData(ClipboardData(text: _textController.text));
+                      },
+                      child: Text("Copy"
+                      )
                   ),
                 ],
               ),
@@ -245,11 +313,16 @@ class _WeightActionsState extends State<WeightActions> {
               SizedBox(
                 width: 30,
               ),
-              Icon(
-                Icons.arrow_forward,
-                color: Colors.greenAccent,
-                size: 30.0,
-                semanticLabel: 'Text to announce in accessibility modes',
+              MaterialButton(
+                child:Icon(Icons.double_arrow,
+                  color: Colors.greenAccent,
+                  size: 30.0,),
+                onPressed: (){
+                  String temp = this._from;
+                  this._from = _to;
+                  _to = temp;
+                  convert(_from, _to, _value);
+                },
               ),
               SizedBox(
                 width: 30,
@@ -286,14 +359,22 @@ class _WeightActionsState extends State<WeightActions> {
                 ),
                 width: MediaQuery.of(context).size.width * 0.30,
                 child: TextField(
+                  controller: _textController,
                   cursorHeight: 20,
-                  //style: inputStyle,
-                  //onSubmitted: (value) =>
-                  //    convert(_from, _to, double.parse(value)),
                   keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    // TextNumberLimitFormatter(),
+                    TextNumberLimitFormatter(),
+                    LengthLimitingTextInputFormatter(11),
+                    //  FilteringTextInputFormatter.digitsOnly,
+                  ],
                   decoration: InputDecoration(
-                      labelText: '  Enter value...',
-                      floatingLabelBehavior: FloatingLabelBehavior.never),
+                    labelText: '  Enter value...',
+                    floatingLabelBehavior: FloatingLabelBehavior.never,
+                    // icon:IconButton(
+                    // icon:const Icon(Icons.copy),
+                    // onPressed: _copyToClipboard,
+                  ),
                   onChanged: (value) {
                     var rv = double.tryParse(value);
                     if (rv != null && rv >= 0) {
@@ -301,7 +382,6 @@ class _WeightActionsState extends State<WeightActions> {
                         _value = rv;
                       });
                     }
-
                   },
                 ),
               ),
@@ -311,6 +391,23 @@ class _WeightActionsState extends State<WeightActions> {
               Text(
                 _from == 'kilograms'?'kg':_from,
                 style: TextStyle(fontSize: 22),
+              ),
+              SizedBox(
+                width: 15,
+              ),
+              ElevatedButton(
+                  style:ElevatedButton.styleFrom(
+                      primary: Colors.greenAccent,
+                      fixedSize: const Size(20, 10),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(40)
+                      )
+                  ),
+                  onPressed: (){
+                    Clipboard.setData(ClipboardData(text: _textController.text));
+                  },
+                  child: Text("Copy"
+                  )
               ),
 
 
