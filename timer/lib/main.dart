@@ -16,7 +16,7 @@ Future<void> main() async {
   ]);
   final NotesDatabase db = await NotesDatabase.instance;
 
-
+ // late final NotificationService notificationService;
 
   final workout = WorkOut(
     name: "third",
@@ -24,8 +24,8 @@ Future<void> main() async {
   );
 
 
-   await NotesDatabase.instance.createWorkOut(workout);
-
+  await NotesDatabase.instance.createWorkOut(workout);
+  final all=await NotesDatabase.instance.getAllWorkOuts();
   var prefs = await SharedPreferences.getInstance();
   runApp(TimerApp(settings: Settings(prefs), prefs: prefs));
 }
@@ -36,23 +36,12 @@ class TimerApp extends StatefulWidget {
 
   TimerApp({required this.settings, required this.prefs});
 
-  static void setLocale(BuildContext context, Locale newLocale) async {
-    _TimerAppState? state = context.findAncestorStateOfType<_TimerAppState>();
-    state?.changeLanguage(newLocale);
-  }
 
   @override
   State<StatefulWidget> createState() => _TimerAppState();
 }
 
 class _TimerAppState extends State<TimerApp> {
-  late Locale _locale;
-
-  changeLanguage(Locale locale) {
-    setState(() {
-      _locale = locale;
-    });
-  }
 
   _onSettingsChanged() {
     setState(() {});

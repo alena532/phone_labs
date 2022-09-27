@@ -1,10 +1,9 @@
-import 'dart:convert';
-
-
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:timer/screens/second_screen.dart';
 import 'package:timer/screens/settings_screen.dart';
 import'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:timer/screens/watchWorkout_screen.dart';
 import '../db/notes_database.dart';
 import '../model/note.dart';
 import '../model/settings.dart';
@@ -29,13 +28,16 @@ class TabataScreen extends StatefulWidget {
 class _TabataScreenState extends State<TabataScreen> {
   late List<WorkOut> works;
   bool isLoading = false;
-
   @override
   void initState() {
+    //notificationService = NotificationService();
+    //listenToNotificationStream();
+
     super.initState();
 
     refreshNotes();
   }
+
 
   Future refreshNotes() async {
     setState(() {
@@ -47,11 +49,6 @@ class _TabataScreenState extends State<TabataScreen> {
     });
   }
 
-  Color? getColor(WorkOut workout ){
-    if(workout.color == 'red') return Colors.red;
-    if(workout.color == 'blue') return Colors.blue;
-    return null;
-  }
 
   Widget buildWorkOuts() => StaggeredGridView.countBuilder(
     padding: EdgeInsets.all(8),
@@ -65,14 +62,13 @@ class _TabataScreenState extends State<TabataScreen> {
       //return note;
 
       return GestureDetector(
-        //onTap: () async {
-        //  await Navigator.of(context).push(MaterialPageRoute(
-        //    builder: (context) => NoteDetailPage(noteId: note.id!),
-        //  ));
+        onTap: ()  {
+           Navigator.of(context).push(MaterialPageRoute(
+            builder: (context) => WatchWorkoutScreen(settings: widget.settings,onSettingsChanged: widget.onSettingsChanged,workOut: workout,refresh:refreshNotes),
+          ));
 
-
-     //   },
-       child: WorkOutCardWidget(workout: works[index], index: index,settings:widget.settings),
+       },
+       child: WorkOutCardWidget(workout: works[index], index: index,settings:widget.settings,refresh: refreshNotes),
           );
     },
   );
@@ -97,12 +93,14 @@ class _TabataScreenState extends State<TabataScreen> {
                   MaterialPageRoute(
                     builder: (context) => SettingsScreen(
                         settings: widget.settings,
-                        onSettingsChanged: widget.onSettingsChanged),
+                        onSettingsChanged: widget.onSettingsChanged,
+                        refresh: refreshNotes),
+
                   ),
                 );
               },
               tooltip: 'Settings',
-            )
+            ),
           ],
 
         ),
@@ -121,14 +119,13 @@ class _TabataScreenState extends State<TabataScreen> {
           child: Icon(Icons.add),
           onPressed: () async {
             await Navigator.of(context).push(
-              MaterialPageRoute(builder: (context) => AddWorkoutScreen(settings: widget.settings,onSettingsChanged: widget.onSettingsChanged)),
+              MaterialPageRoute(builder: (context) => AddWorkoutScreen(settings: widget.settings,onSettingsChanged: widget.onSettingsChanged,refresh: refreshNotes)),
             );
-
             refreshNotes();
           },
 
         )
-      // floatingActionButton: FloatingActionButton(
+       //floatingActionButton: FloatingActionButton(
        // backgroundColor: Colors.black,
       //  child: Icon(Icons.add),
        // onPressed: () async {

@@ -30,24 +30,22 @@ class NotesDatabase{
   id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
   name TEXT NOT NULL,
   color TEXT NOT NULL,
-  workoutTime INTEGER DEFAULT 10,
-  warmUpTime INTEGER DEFAULT 10,
-  coolDownTime INTEGER DEFAULT 10,
+  workoutTime INTEGER DEFAULT 5 ,
+  restTime INTEGER DEFAULT 5 ,
+  warmUpTime INTEGER DEFAULT 5,
+  coolDownTime INTEGER DEFAULT 5,
   rep INTEGER DEFAULT 1,
-  resPer INTEGER DEFAULT 10
+  startDelay INTEGER DEFAULT 5
   )""");
 
   }
 
-
    Future<int> createWorkOut(WorkOut work) async {
      final db = await instance.database;
-
 
     final id = await db.insert(workOutNotes, work.toJson());
     return id;
   }
-
 
   Future<WorkOut> getWorkOutById(int id) async {
     final db = await instance.database;

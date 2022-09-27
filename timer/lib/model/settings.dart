@@ -25,7 +25,7 @@ class Settings {
     silentMode = json['silentMode'] ?? false;
     primarySwatch = Colors.primaries[
     json['primarySwatch'] ?? Colors.primaries.indexOf(Colors.deepPurple)];
-    fontStyle = json['nightMode'] ?? 20;
+    fontStyle = json['fontStyle'] ?? 20;
     countdownPip = json['countdownPip'] ?? 'pip.mp3';
     startRep = json['startRep'] ?? 'boop.mp3';
     startRest = json['startRest'] ?? 'dingdingding.mp3';

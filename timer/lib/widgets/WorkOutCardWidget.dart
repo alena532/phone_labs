@@ -2,6 +2,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+import '../db/notes_database.dart';
 import '../model/note.dart';
 import '../model/settings.dart';
 
@@ -11,17 +12,25 @@ class WorkOutCardWidget extends StatelessWidget {
     required this.workout,
     required this.index,
     required this.settings,
+    required this.refresh,
   }) : super(key: key);
 
   final WorkOut workout;
   final int index;
   final Settings settings;
+  final Function refresh;
 
   Color? getColor(WorkOut workout ){
     if(workout.color == 'red') return Colors.red;
     if(workout.color == 'blue') return Colors.blue;
+    if(workout.color == 'purple') return Colors.purple;
+    if(workout.color == 'pink') return Colors.pink;
+    if(workout.color == 'yellow') return Colors.yellow;
+    if(workout.color == 'brown') return Colors.brown;
     return null;
   }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -33,8 +42,9 @@ class WorkOutCardWidget extends StatelessWidget {
       child: Container(
         constraints: BoxConstraints(minHeight: minHeight),
         padding: EdgeInsets.all(8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        child: Row(
+         // mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
@@ -45,6 +55,9 @@ class WorkOutCardWidget extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
+
+
+
           ],
         ),
       ),

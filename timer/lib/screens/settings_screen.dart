@@ -1,6 +1,7 @@
 
 
 import 'package:flutter/material.dart';
+import 'package:timer/db/notes_database.dart';
 
 import '../model/settings.dart';
 import 'package:numberpicker/numberpicker.dart';
@@ -31,8 +32,9 @@ class SettingsScreen extends StatefulWidget {
   final Settings settings;
 
   final Function onSettingsChanged;
+  final Function refresh;
 
-  SettingsScreen({required this.settings, required this.onSettingsChanged});
+  SettingsScreen({required this.settings, required this.onSettingsChanged,required this.refresh});
 
   @override
   State<StatefulWidget> createState() => _SettingsScreenState();
@@ -134,8 +136,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   widget.onSettingsChanged();
 
                 });
-
               }
+            ),
+            ListTile(
+              title: Text('Clear all',
+                  style: TextStyle(fontSize: widget.settings.fontStyle.toDouble())),
+              onTap: () async {
+                final wokrouts =await  NotesDatabase.instance.getAllWorkOuts();
+                for(final element in wokrouts){
+                  NotesDatabase.instance.deleteWorkOut(element.id!);
+                }
+                widget.refresh();
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('all workouts was deleted successfuly')));
+              },
+
             )
         ]
         )
