@@ -1,4 +1,4 @@
-package dev.protium.rest;
+package com.example.timer;
 
 import android.app.Service;
 import android.content.Intent;
