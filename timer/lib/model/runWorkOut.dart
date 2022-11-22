@@ -40,11 +40,12 @@ class BeginWorkout{
 
   Timer? _timer;
 
-  late Duration _timeLeft;
+  Duration _timeLeft = Duration(seconds: 130);
 
   int rep = 0;
 
   int times=1;
+
 
   BeginWorkout(this._settings, this._config, this._onStateChange);
 
@@ -54,6 +55,7 @@ class BeginWorkout{
 
 
   start() {
+
     if (currentStep == WorkoutState.initial) {
       currentStep = WorkoutState.starting;
       if (_config.startDelay.inSeconds == 0) {
@@ -66,9 +68,26 @@ class BeginWorkout{
     _onStateChange();
   }
 
+  int getTotalTime(){
+    int _totalTime = 0;
+    int _repeats = _config.rep;
+    while(_repeats != 0){
+      _totalTime += _config.startDelay.inSeconds;
+      _totalTime += _config.workoutTime.inSeconds;
+      _totalTime += _config.restTime.inSeconds;
+      _totalTime += _config.warmUpTime.inSeconds;
+      _totalTime += _config.coolDownTime.inSeconds;
+      --_repeats;
+    }
+    return _totalTime;
+  }
+
+
   dispose() {
     _timer?.cancel();
+
   }
+
 
   pause() {
     _timer?.cancel();
@@ -100,8 +119,8 @@ class BeginWorkout{
     } else if (currentStep == WorkoutState.warmingUp) {
       _startCoolingDown();
     } else if (currentStep == WorkoutState.coolingDown) {
-       if(_config.rep ==rep+1){
-         _finish();
+       if(_config.rep == rep+1){
+         finish();
        }
        else{
          rep++;
@@ -120,20 +139,13 @@ class BeginWorkout{
       } else{
         go();
       }
-
     } else if (currentStep == WorkoutState.exercising) {
-
       go();
     } else if (currentStep == WorkoutState.resting) {
-
       _startExercise();
-
     } else if (currentStep == WorkoutState.warmingUp) {
-
       _startRest();
-
     } else if (currentStep == WorkoutState.coolingDown) {
-
       _startWarmUp();
     }
   }
@@ -146,69 +158,85 @@ class BeginWorkout{
     else{
       _timeLeft = Duration(seconds: 0);
     }
-
     _nextStep();
     _onStateChange();
 
   }
 
   goToPrev(){
-
-
       _prevStep();
       _onStateChange();
-
   }
 
-  go(){
+  go([int _persistTime = -1]){
     currentStep = WorkoutState.starting;
-      if (_config.startDelay.inSeconds == 0) {
-        _nextStep();
-        return;
-      }
-        _timeLeft = _config.startDelay;
+    if (_config.startDelay.inSeconds == 0) {
+      _nextStep();
+      return;
+    }
+    if(_persistTime == -1){
+      _timeLeft = _config.startDelay;
+    }else{
+      _timeLeft = Duration(seconds: _persistTime);
+    }
+
   }
 
-  _startExercise() {
+  _startExercise([int _persistTime = -1]) {
     currentStep = WorkoutState.exercising;
     if (_config.workoutTime.inSeconds == 0) {
       _nextStep();
       return;
     }
-    _timeLeft = _config.workoutTime;
-
+    if(_persistTime == -1){
+      _timeLeft = _config.workoutTime;
+    }else{
+      _timeLeft = Duration(seconds: _persistTime);
+    }
   }
 
-  _startRest() {
+  _startRest([int _persistTime = -1]) {
     currentStep = WorkoutState.resting;
     if (_config.restTime.inSeconds == 0) {
       _nextStep();
       return;
     }
-    _timeLeft = _config.restTime;
-
+    if(_persistTime == -1){
+      _timeLeft = _config.restTime;
+    }else{
+      _timeLeft = Duration(seconds: _persistTime);
+    }
   }
 
-  _startWarmUp() {
+  _startWarmUp([int _persistTime = -1]) {
     currentStep = WorkoutState.warmingUp;
     if (_config.warmUpTime.inSeconds == 0) {
       _nextStep();
       return;
     }
-    _timeLeft = _config.warmUpTime;
+    if(_persistTime == -1){
+      _timeLeft = _config.warmUpTime;
+    }else{
+      _timeLeft = Duration(seconds: _persistTime);
+    }
 
   }
-  _startCoolingDown() {
+  _startCoolingDown([int _persistTime = -1]) {
     currentStep = WorkoutState.coolingDown;
     if (_config.coolDownTime.inSeconds == 0) {
       _nextStep();
       return;
     }
-    _timeLeft = _config.coolDownTime;
+    if(_persistTime == -1){
+      _timeLeft = _config.coolDownTime;
+    }else{
+      _timeLeft = Duration(seconds: _persistTime);
+    }
 
   }
 
-  _finish() {
+
+  finish() {
     _timer?.cancel();
     currentStep = WorkoutState.finished;
     _timeLeft = Duration(seconds: 0);

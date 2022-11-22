@@ -49,26 +49,15 @@ public class AppService extends Service {
     public void startTimer(int duration) {
         _currentSeconds = duration - 1;
         _timer = new Timer();
+        Log.i(TAG, "Timer run ");
         _timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
+                //Log.i(TAG, "Timer run");
                 if (_currentSeconds == 1) {
                     _timer.cancel();
                     Log.i(TAG, "Timer stopped");
                     _currentSeconds = 0;
-                    try {
-                        AudioManager am = (AudioManager) getSystemService(AUDIO_SERVICE);
-                        if (am.isMusicActive()) {
-                            long eventtime = SystemClock.uptimeMillis();
-                            KeyEvent downEvent = new KeyEvent(eventtime, eventtime, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PAUSE, 0);
-                            am.dispatchMediaKeyEvent(downEvent);
-                            KeyEvent upEvent = new KeyEvent(eventtime, eventtime, KeyEvent.ACTION_UP, KeyEvent.KEYCODE_MEDIA_PAUSE, 0);
-                            am.dispatchMediaKeyEvent(upEvent);
-                        }
-                        Log.i(TAG, "Music paused");
-                    } catch (Exception e) {
-                        Log.e(TAG, "Can't pause music. " + e.getMessage());
-                    }
                 }
                 else {
                     _currentSeconds--;

@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-
+import 'package:flutter/services.dart';
+import 'package:flutter/material.dart';
 import '../model/runWorkOut.dart';
 import '../model/settings.dart';
 import 'package:wakelock/wakelock.dart';
@@ -29,22 +32,120 @@ String stepName(WorkoutState step) {
 class WorkoutScreen extends StatefulWidget{
   final Settings settings;
   final WorkOutDTO dto;
+  final bool testMode;
 
-  WorkoutScreen({required this.settings, required this.dto,});
+  WorkoutScreen({required this.settings, required this.dto, this.testMode = false});
+
+
 
   @override
-  State<StatefulWidget> createState() => _WorkoutScreenState();
+  State<StatefulWidget> createState() => _WorkoutScreenState(testMode);
 }
 
-class _WorkoutScreenState extends State<WorkoutScreen>{
+class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserver{
+  _WorkoutScreenState(this.testMode);
+  final bool testMode;
+  bool _connectedToService = false;
+  int _currentSeconds = 1;
   late BeginWorkout _workout;
+
+
+  static const MethodChannel platform =
+      MethodChannel('com.example.timer/service');
 
   @override
   initState() {
     super.initState();
-    _workout = BeginWorkout(widget.settings, widget.dto, _onWorkoutChanged);
-    _start();
+
+    if (!testMode) {
+      WidgetsBinding.instance.addObserver(this);
+      connectToService();
+      _workout = BeginWorkout(widget.settings, widget.dto, _onWorkoutChanged);
+      _currentSeconds = _workout.getTotalTime();
+      _start();
+    } else {
+      _connectedToService = true;
+    }
+
+    //_workout = BeginWorkout(widget.settings, widget.dto, _onWorkoutChanged);
+
+
   }
+
+  Future<void> connectToService() async {
+    try {
+      await platform.invokeMethod<void>('connect');
+      print('Connected to service');
+    } on Exception catch (e) {
+      print(e.toString());
+      return;
+    }
+
+    try {
+      final int? serviceCurrentSeconds = await getServiceCurrentSeconds();
+      setState(() {
+        _connectedToService = true;
+        if (serviceCurrentSeconds! <= 0) {
+          _currentSeconds = _workout.getTotalTime();
+        } else {
+          _currentSeconds = serviceCurrentSeconds;
+        }
+      });
+    } on PlatformException catch (e) {
+      print(e.toString());
+    } on Exception catch (e) {
+      print(e.toString());
+    }
+  }
+
+  Future<void> startServiceTimer(int duration) async {
+    if (testMode) {
+      return;
+    }
+
+    try {
+      await platform
+          .invokeMethod<void>('start', <String, int>{'duration': duration});
+    } on PlatformException catch (e) {
+      debugPrint(e.toString());
+      rethrow;
+    }
+  }
+
+  Future<void> stopServiceTimer() async {
+    if (testMode) {
+      return;
+    }
+
+    try {
+      await platform.invokeMethod<void>('stop');
+    } on PlatformException catch (e) {
+      debugPrint(e.toString());
+      rethrow;
+    }
+  }
+
+  Future<int?> getServiceCurrentSeconds() async {
+    try {
+      final int? result = await platform.invokeMethod<int>('getCurrentSeconds');
+      return result;
+    } on PlatformException catch (e) {
+      print(e.toString());
+    }
+
+    return 0;
+  }
+
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.detached ||  state == AppLifecycleState.inactive) return;
+
+    if (state == AppLifecycleState.paused) connectToService();
+
+  }
+
 
   _getBackgroundColor(ThemeData theme) {
     switch (_workout.step) {
@@ -66,17 +167,26 @@ class _WorkoutScreenState extends State<WorkoutScreen>{
   dispose() {
     _workout.dispose();
     Wakelock.disable();
+
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+
   }
 
   _pause() { _workout.pause(); }
 
   _onWorkoutChanged() {
+    if (!mounted) return;
+
     if (_workout.currentStep == WorkoutState.finished) {
       Wakelock.disable();
     }
-    this.setState(() {});
+    if(this.mounted) {
+      this.setState(() {});
+    }
+
   }
+
   int countSeconds(){
     Duration seconds = Duration(seconds: 0);
     int rep = widget.dto.rep;
@@ -91,10 +201,18 @@ class _WorkoutScreenState extends State<WorkoutScreen>{
     return seconds.inSeconds;
   }
 
+
+
   _start() {
-    _workout.start();
+    startServiceTimer(_workout.getTotalTime()).then((void _) => setState(() {
+      _workout.start();
+      _currentSeconds--;
+    }));
+
+
     Wakelock.enable();
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -109,7 +227,7 @@ class _WorkoutScreenState extends State<WorkoutScreen>{
             Expanded(child: Row(children:[
         IconButton(
         iconSize: MediaQuery.of(context).size.height * 0.10,
-          onPressed: () => {
+          onPressed: () async => {
             //_workout.player1.stop(),
             _workout.dispose(),
             Navigator.pop(context),

@@ -27,7 +27,7 @@ import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
 
 public class MainActivity extends FlutterActivity  {
     static final String TAG = "rest";
-    static final String CHANNEL = "dev.protium.rest/service";
+    static final String CHANNEL = "com.example.timer/service";
 
     AppService appService;
     boolean serviceConnected = false;
@@ -35,27 +35,27 @@ public class MainActivity extends FlutterActivity  {
 
     @Override
     public void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {
-       GeneratedPluginRegistrant.registerWith(flutterEngine);
+        GeneratedPluginRegistrant.registerWith(flutterEngine);
         new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), CHANNEL).setMethodCallHandler(
-            (call,result)->{
-                if (call.method.equals("connect")) {
-                connectToService();
-                keepResult = result;
-            } else if (serviceConnected) {
-                if (call.method.equals("start")) {
-                    appService.startTimer(call.argument("duration"));
-                    result.success(null);
-                } else if (call.method.equals("stop")) {
-                    appService.stopTimer();
-                    result.success(null);
-                } else if (call.method.equals("getCurrentSeconds")) {
-                    int sec = appService.getCurrentSeconds();
-                    result.success(sec);
+                (call,result)->{
+                    if (call.method.equals("connect")) {
+                        connectToService();
+                        keepResult = result;
+                    } else if (serviceConnected) {
+                        if (call.method.equals("start")) {
+                            appService.startTimer(call.argument("duration"));
+                            result.success(null);
+                        } else if (call.method.equals("stop")) {
+                            appService.stopTimer();
+                            result.success(null);
+                        } else if (call.method.equals("getCurrentSeconds")) {
+                            int sec = appService.getCurrentSeconds();
+                            result.success(sec);
+                        }
+                    } else {
+                        result.error(null, "App not connected to service", null);
+                    }
                 }
-            } else {
-                result.error(null, "App not connected to service", null);
-            }
-            }
 
         );
     }
@@ -65,6 +65,7 @@ public class MainActivity extends FlutterActivity  {
             Intent service = new Intent(this, AppService.class);
             startService(service);
             bindService(service, connection, Context.BIND_AUTO_CREATE);
+            serviceConnected = true;
         } else {
             Log.i(TAG, "Service already connected");
             if (keepResult != null) {
@@ -82,6 +83,7 @@ public class MainActivity extends FlutterActivity  {
             String packageName = context.getPackageName();
             PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
             if (!pm.isIgnoringBatteryOptimizations(packageName)) {
+                Log.i(TAG, "onResume");
                 Toast.makeText(context, "This app needs to be whitelisted", Toast.LENGTH_LONG).show();
                 Intent intent = new Intent();
                 intent.setAction(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
@@ -121,5 +123,5 @@ public class MainActivity extends FlutterActivity  {
         }
     };
 
-    
+
 }
